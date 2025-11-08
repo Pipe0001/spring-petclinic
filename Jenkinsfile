@@ -11,13 +11,15 @@ pipeline {
         }
       }
       steps {
-        sh 'mvn clean install'
+        sh 'mvn clean install -DskipTests'
+        stash includes: 'target/*.jar', name: 'jarfile'
       }
     }
 
     stage('Docker Build') {
       agent any
       steps {
+        unstash 'jarfile'
         sh 'docker build -t piper305/spring-petclinic:latest .'
       }
     }
@@ -27,7 +29,7 @@ pipeline {
       steps {
         withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
           sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
-          sh 'docker push <tu-usuario-dockerhub>/spring-petclinic:latest'
+          sh 'docker push piper305/spring-petclinic:latest'
         }
       }
     }
